@@ -61,6 +61,8 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
     </site>
   </distributionManagement>
   <properties>
+    <maven.compiler.source>11</maven.compiler.source> <!-- parent pom uses java 8 but most dependencies use java 11 -->
+    <maven.compiler.target>11</maven.compiler.target>
     <byte-buddy.version>
             1.14.9
         </byte-buddy.version>
