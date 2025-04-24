@@ -54,6 +54,7 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.entity.BufferedHttpEntity;
 import org.apache.http.entity.InputStreamEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 
@@ -89,14 +90,13 @@ public final class ApacheRequest implements Request {
             final InputStream content,
             final int connect,
             final int read) throws IOException {
-            final CloseableHttpResponse response =
-                HttpClients.createSystem().execute(
-                    this.httpRequest(
-                        home, method, headers, content,
-                        connect, read
-                    )
-                );
-            try {
+            try (CloseableHttpClient client = HttpClients.createSystem();
+                 CloseableHttpResponse response = client.execute(
+                     this.httpRequest(
+                         home, method, headers, content,
+                         connect, read
+                     )
+                 )) {
                 return new DefaultResponse(
                     req,
                     response.getStatusLine().getStatusCode(),
@@ -104,8 +104,6 @@ public final class ApacheRequest implements Request {
                     this.headers(response.getAllHeaders()),
                     this.consume(response.getEntity())
                 );
-            } finally {
-                response.close();
             }
         }
 

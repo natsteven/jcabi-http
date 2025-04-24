@@ -48,6 +48,7 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
+import org.slf4j.LoggerFactory;
 
 /**
  * Wire that ignores SSL PKIX verifications.
@@ -141,6 +142,12 @@ public final class TrustedWire implements Wire {
             );
             return ctx;
         } catch (final KeyManagementException | NoSuchAlgorithmException ex) {
+            LoggerFactory.getLogger(TrustedWire.class)
+                .error(
+                    "Error creating SSL context: %s",
+                    ex.getMessage()
+                );
+            System.err.println("Error creating SSL context: " + ex.getMessage());
             throw new IllegalStateException(ex);
         }
     }

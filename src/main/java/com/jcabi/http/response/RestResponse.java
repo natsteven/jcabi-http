@@ -283,6 +283,12 @@ public final class RestResponse extends AbstractResponse {
             cookie,
             Matchers.notNullValue()
         );
+        // cookie will never be null due to Matcher Assertion
+        if (cookie == null) {
+            throw new IllegalStateException(
+                String.format("cookie '%s' not found", name)
+            );
+        }
         assert cookie != null;
         return cookie;
     }

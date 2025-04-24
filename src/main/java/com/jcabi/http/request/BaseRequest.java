@@ -271,6 +271,7 @@ public final class BaseRequest implements Request {
 
     @Override
     public Response fetch() throws IOException {
+        System.out.println("CS574 is great, and this is a fetch");
         return this.fetchResponse(new ByteArrayInputStream(this.content));
     }
 
