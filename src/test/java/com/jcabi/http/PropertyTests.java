@@ -5,6 +5,10 @@ import com.jcabi.http.mock.MkContainer;
 import com.jcabi.http.mock.MkGrizzlyContainer;
 import com.jcabi.http.mock.MkQuery;
 import com.jcabi.http.request.*;
+import com.jcabi.http.response.JsonResponse;
+import com.jcabi.http.response.RestResponse;
+import com.jcabi.http.wire.AutoRedirectingWire;
+import jakarta.ws.rs.core.HttpHeaders;
 import org.junit.jupiter.api.*;
 import java.io.ByteArrayInputStream;
 import java.net.URI;
@@ -192,6 +196,55 @@ import static org.junit.jupiter.api.Assertions.*;
             assertEquals("world", response2.body());
 
         }
+
+        // retrieves and parses Json
+        @Test
+        public void jsonResponseTest() throws Exception {
+            MkContainer server2 = new MkGrizzlyContainer()
+                    .next(new MkAnswer.Simple(200, "{\"hello\":\"world\"}"))
+                    .start();
+            String response = new JdkRequest(server2.home())
+                    .method(Request.GET).fetch().as(JsonResponse.class)
+                    .json().readObject().getString("hello");
+
+
+            assertEquals("world", response);
+
+        }
+
+        // gets cookies by name and gets paths
+        @Test
+        public void cookiesTest() throws Exception {
+            RestResponse response = new RestResponse(
+                    new FakeRequest().withHeader(HttpHeaders.SET_COOKIE, "cookie1=value1")
+                            .withHeader(HttpHeaders.SET_COOKIE, "cookie2=value2; path=value3")
+                            .fetch()
+            );
+            assertEquals("value1", response.cookie("cookie1").getValue());
+            assertEquals("value2", response.cookie("cookie2").getValue());
+            assertEquals("value3", response.cookie("cookie2").getPath());
+        }
+
+        // follows redirects to final destination
+        @Test
+        public void redirectingWireTest() throws Exception {
+            MkContainer container = new MkGrizzlyContainer()
+                    .next(new MkAnswer.Simple(302, "Redirected")
+                            .withHeader(HttpHeaders.LOCATION, "/newLocation"))
+                    .next(new MkAnswer.Simple(200, "Final Destination"))
+                    .start();
+
+            RestResponse response = new JdkRequest(container.home())
+                    .through(AutoRedirectingWire.class)
+                    .fetch()
+                    .as(RestResponse.class);
+
+            response.assertStatus(200);
+            assertEquals("Final Destination", response.body());
+        }
+
+
+
 
     }
 
