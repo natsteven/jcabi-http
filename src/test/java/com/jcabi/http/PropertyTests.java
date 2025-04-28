@@ -1,5 +1,6 @@
 package com.jcabi.http;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.jcabi.http.mock.MkAnswer;
 import com.jcabi.http.mock.MkContainer;
 import com.jcabi.http.mock.MkGrizzlyContainer;
@@ -7,10 +8,16 @@ import com.jcabi.http.mock.MkQuery;
 import com.jcabi.http.request.*;
 import com.jcabi.http.response.JsonResponse;
 import com.jcabi.http.response.RestResponse;
+import com.jcabi.http.response.WebLinkingResponse;
+import com.jcabi.http.response.XmlResponse;
 import com.jcabi.http.wire.AutoRedirectingWire;
+import com.jcabi.http.wire.UserAgentWire;
+import com.jcabi.http.wire.VerboseWire;
 import jakarta.ws.rs.core.HttpHeaders;
 import org.junit.jupiter.api.*;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.net.URI;
 
 
@@ -209,6 +216,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 
             assertEquals("world", response);
+            server2.stop();
 
         }
 
@@ -243,6 +251,64 @@ import static org.junit.jupiter.api.Assertions.*;
             assertEquals("Final Destination", response.body());
         }
 
+        // properly parses XML
+        @Test
+        public void xmlResponseTest() throws Exception {
+            MkContainer server2 = new MkGrizzlyContainer()
+                    .next(new MkAnswer.Simple(200, "<root><child>value</child></root>"))
+                    .start();
+            String response = new JdkRequest(server2.home())
+                    .method(Request.GET).fetch().as(XmlResponse.class)
+                    .xml().xpath("/root/child/text()").get(0);
+
+            assertEquals("value", response);
+            server2.stop();
+        }
+
+        // parses and follows links in headers
+        @Test
+        public void webLinkingTest() throws Exception {
+            MkContainer server2 = new MkGrizzlyContainer()
+                    .next(new MkAnswer.Simple(200, "hello")
+                            .withHeader("Link", "</newLocation>; rel=\"next\""))
+                    .start();
+            URI response = new JdkRequest(server2.home())
+                    .method(Request.GET).fetch().as(WebLinkingResponse.class)
+                    .follow("next").uri().get();
+
+            assertEquals(server2.home() + "newLocation", response.toString());
+            server2.stop();
+        }
+
+        // verbose wire logs requests
+        @Test
+        public void verboseWireTest() throws Exception {
+            MkContainer server2 = new MkGrizzlyContainer()
+                    .next(new MkAnswer.Simple(200, "secretMessage"))
+                    .start();
+            ByteArrayOutputStream newOut = new ByteArrayOutputStream();
+            System.setOut(new PrintStream(newOut));
+
+            new JdkRequest(server2.home())
+                    .through(VerboseWire.class)
+                    .method(Request.GET)
+                    .fetch();
+
+
+            assert(newOut.toString().contains("secretMessage"));
+            System.setOut(System.out);
+            server2.stop();
+        }
+
+        // userAgentWire adds user agent header
+        @Test
+        public void userAgentWireTest() throws Exception {
+            new JdkRequest(server.home())
+                    .through(UserAgentWire.class)
+                    .fetch();
+            MkQuery resp = server.take();
+            assert(resp.headers().get("User-Agent").get(0).startsWith("jcabi-"));
+        }
 
 
 
