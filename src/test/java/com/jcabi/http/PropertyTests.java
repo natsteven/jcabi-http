@@ -21,14 +21,14 @@ import static org.junit.jupiter.api.Assertions.*;
         public void startContainer() throws Exception {
             server = new MkGrizzlyContainer()
                     .next(new MkAnswer.Simple(200, "hello"))
-                    .next(new MkAnswer.Simple(200, "world"))
+                    .next(new MkAnswer.Simple(212, "world"))
                     .start();
         }
 
         @AfterEach
         public void stopContainer() { server.stop(); }
 
-        // header is set properly
+        // header is set properly in headers
         @Test
         public void headersTest() throws Exception {
             Response req = new JdkRequest(server.home())
@@ -86,7 +86,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
         // back returns the same request
         @Test
-        public void backTest() {
+        public void backFromBodyTest() {
             Request r1 = new JdkRequest(server.home());
             Request r2 = r1.body().back();
 
@@ -151,6 +151,47 @@ import static org.junit.jupiter.api.Assertions.*;
             assertEquals("http://" + server.home().getHost() + ":8080/", req.toString());
         }
 
+        // test status code
+        @Test
+        public void statusTest() throws Exception {
+            Request req = new JdkRequest(server.home())
+                    .method(Request.GET);
+
+            Response response = req.fetch();
+            Response response2 = req.fetch();
+
+            assertEquals(200, response.status());
+            assertEquals(212, response2.status());
+
+        }
+
+        // test reason
+        @Test
+        public void reasonTest() throws Exception {
+            Request req = new JdkRequest(server.home())
+                    .method(Request.GET);
+
+            Response response = req.fetch();
+            Response response2 = req.fetch();
+
+            assertEquals("OK", response.reason());
+            assertEquals("CUSTOM", response2.reason());
+
+        }
+
+        // test body
+        @Test
+        public void bodyTest() throws Exception {
+            Request req = new JdkRequest(server.home())
+                    .method(Request.GET);
+
+            Response response = req.fetch();
+            Response response2 = req.fetch();
+
+            assertEquals("hello", response.body());
+            assertEquals("world", response2.body());
+
+        }
 
     }
 
