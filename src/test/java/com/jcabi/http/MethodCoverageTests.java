@@ -26,9 +26,6 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * Method coverage tests targeting specific API entry points.
- */
 class MethodCoverageTests {
 
     private MkContainer server;
