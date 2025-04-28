@@ -1,35 +1,20 @@
-//package com.jcabi.http;
-//
-//import com.google.common.net.HttpHeaders;
-//import com.google.common.net.MediaType;
-//import com.jcabi.http.request.JdkRequest;
-//import com.jcabi.http.response.JsonResponse;
-//import com.jcabi.http.wire.RetryWire;
-//import jakarta.json.JsonArray;
-//
-//public class JcabiPlayground {
-//    public static void main(String[] args) {
-//        String query = "what is jcabi-http";
-//        String apiUrl = "https://www.google.com/";
-//
-//        try {
-//            // Create the request
-//             String response = new JdkRequest(apiUrl)
-//                     .header(HttpHeaders.USER_AGENT, "Mozilla/5.0")
-//                     .header(HttpHeaders.ACCEPT, "application/json")
-//                .uri()
-//                .queryParam("q", query)
-//                .queryParam("format", "json")
-//                .back()
-//                     .through(RetryWire.class)
-//                .method("GET")
-//                .fetch()
-//                        .as()
-//
-//
-//             System.out.println("Response: " + response);
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//    }
-//}
+package com.jcabi.http;
+
+import com.jcabi.http.request.JdkRequest;
+import com.jcabi.http.wire.RetryWire;
+
+public class JcabiPlayground {
+    public static void main(String[] args) throws Exception {
+        Response resp = new JdkRequest("https://www.google.com/search")
+                .through(RetryWire.class)
+                .header("Browser", "Mozilla/5.0")
+                .uri()
+                .queryParam("q", "jcabi-http tutorial")
+                .back()
+                .method(Request.GET)
+                .fetch();
+
+        String html = resp.body();
+        System.out.println(html);
+    }
+}
