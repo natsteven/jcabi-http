@@ -7,6 +7,7 @@ import com.jcabi.http.mock.MkQuery;
 import com.jcabi.http.request.*;
 import org.junit.jupiter.api.*;
 
+import java.io.ByteArrayInputStream;
 import java.util.List;
 import java.util.Map;
 
@@ -39,14 +40,14 @@ import static org.junit.jupiter.api.Assertions.*;
         }
 
         @Test
-        void requestTest() {
+        public void requestTest() {
             Request r1 = new FakeRequest();
             Request r2 = r1.header("new", "request");
             assertNotEquals(r1, r2);
         }
 
         @Test
-        void resetTest() throws Exception {
+        public void resetTest() throws Exception {
             Request r1 = new ApacheRequest(server.home())
                     .header("reset", "test");
             r1.fetch();
@@ -56,52 +57,28 @@ import static org.junit.jupiter.api.Assertions.*;
             Response r2 = r1.reset("reset")
                     .fetch();
             MkQuery rp2 = server.take();
-            assertNotEquals(r1, r2);
-            assertNotEquals(rp1, rp2);
-
+            assertEquals("test", rp1.headers().get("Reset").get(0));
+            assertNull( rp2.headers().get("Reset"));
         }
 
         @Test
-        void bodySetGetTest() {
+        public void bodySetGetTest() {
             RequestBody body = new FakeRequest().body().set("test");
             assertEquals("test", body.get());
         }
-//
-//        @Test
-//        void queryParamTest() {
-//            RequestURI uri = new FakeRequest().uri()
-//                    .queryParam("a", "x")
-//                    .queryParam("b", "y");
-//            String built = uri.get().toString();
-//        }
-//
-//        @Test
-//        void responseHeadersPreserved() throws Exception {
-//            Response res = new ApacheRequest(server.home()).fetch();
-//            List<Map.Entry<String,String>> foo = res.headers("Foo");
-//
-//        }
-//
-//        @Test
-//        void reasonNotEmpty() throws Exception {
-//            String reason = new FakeRequest().withReason("Teapot").fetch().reason();
-//            assertNotNull(reason);
-//            assertFalse(reason.isEmpty());
-//        }
-//
-//        @Test
-//        void backReturnsSameRequest() throws Exception {
-//            FakeRequest origin = new FakeRequest();
-//            Response res = origin.fetch();
-//            assertSame(origin, res.back());
-//        }
-//
-//        @Test
-//        void responseBodyUtf8() throws Exception {
-//            String text = "Привет";
-//            Response res = new FakeRequest().withBody(text).fetch();
-//            assertEquals(text, res.body());
-//        }
+
+        @Test
+        public void fetchTest() throws Exception {
+            Request req = new FakeRequest().withBody("test");
+
+            assertThrows(IllegalStateException.class, () -> req.fetch(new ByteArrayInputStream("newBody".getBytes())));
+
+            req.fetch();
+            MkQuery resp = server.take();
+            System.out.println(resp.body());
+
+        }
+
     }
 
 
