@@ -39,6 +39,7 @@ import com.jcabi.http.RequestBody;
 import com.jcabi.http.RequestURI;
 import com.jcabi.http.Response;
 import com.jcabi.http.Wire;
+import com.jcabi.http.response.WebLinkingResponse;
 import com.jcabi.immutable.Array;
 import com.jcabi.log.Logger;
 import jakarta.json.Json;
@@ -201,7 +202,7 @@ public final class BaseRequest implements Request {
 
     @Override
     public Request header(final String name, final Object value) {
-        return new BaseRequest(
+        BaseRequest ret = new BaseRequest(
             this.wire,
             this.home,
             this.hdrs.with(new ImmutableHeader(name, value.toString())),
@@ -210,6 +211,12 @@ public final class BaseRequest implements Request {
             this.connect,
             this.read
         );
+        assert(ret.hdrs.size() == this.hdrs.size() + 1);
+        assert(ret.hdrs.stream().anyMatch(hdr ->
+            hdr.getKey().equalsIgnoreCase(name) && hdr.getValue().equals(value.toString())
+        ));
+        assert(!ret.equals(this));
+        return ret;
     }
 
     @Override
@@ -222,7 +229,7 @@ public final class BaseRequest implements Request {
                 headers.add(header);
             }
         }
-        return new BaseRequest(
+        BaseRequest ret = new BaseRequest(
             this.wire,
             this.home,
             headers,
@@ -231,6 +238,13 @@ public final class BaseRequest implements Request {
             this.connect,
             this.read
         );
+        boolean contained = this.hdrs.stream().anyMatch(hdr ->
+            hdr.getKey().equalsIgnoreCase(name));
+        if (contained) assert(ret.hdrs.size() == this.hdrs.size() - 1);
+        assert(ret.hdrs.stream().noneMatch(hdr ->
+            hdr.getKey().equalsIgnoreCase(name)));
+
+        return ret;
     }
 
     @Override
@@ -282,6 +296,7 @@ public final class BaseRequest implements Request {
                 "Request Body is not empty, use fetch() instead"
             );
         }
+        assert(this.content.length == 0);
         return this.fetchResponse(stream);
     }
 
@@ -487,7 +502,7 @@ public final class BaseRequest implements Request {
 
         @Override
         public Request back() {
-            return new BaseRequest(
+            BaseRequest ret = new BaseRequest(
                 this.owner.wire,
                 this.address,
                 this.owner.hdrs,
@@ -496,6 +511,9 @@ public final class BaseRequest implements Request {
                 this.owner.connect,
                 this.owner.read
             );
+            // below is false for rel links during weblinking response
+//             assert(ret.equals(this.owner));
+            return ret;
         }
 
         @Override
@@ -505,17 +523,21 @@ public final class BaseRequest implements Request {
 
         @Override
         public RequestURI set(final URI uri) {
-            return new BaseUri(this.owner, uri.toString());
+            RequestURI ret = new BaseUri(this.owner, uri.toString());
+            assert(ret.toString().equals(uri.toString()));
+            return ret;
         }
 
         @Override
         public RequestURI queryParam(final String name, final Object value) {
-            return new BaseUri(
+            RequestURI ret = new BaseUri(
                 this.owner,
                 UriBuilder.fromUri(this.address)
                     .queryParam(name, "{value}")
                     .build(value).toString()
             );
+            assert(ret.toString().contains(name));
+            return ret;
         }
 
         @Override
@@ -536,31 +558,37 @@ public final class BaseRequest implements Request {
 
         @Override
         public RequestURI path(final String segment) {
-            return new BaseUri(
+            RequestURI ret = new BaseUri(
                 this.owner,
                 UriBuilder.fromUri(this.address)
                     .path(segment)
                     .build().toString()
             );
+//            assert(ret.toString().equals(this.toString() + segment.split("/")[1]));
+            return ret;
         }
 
         @Override
         public RequestURI userInfo(final String info) {
-            return new BaseUri(
+            RequestURI ret = new BaseUri(
                 this.owner,
                 UriBuilder.fromUri(this.address)
                     .userInfo(info)
                     .build().toString()
             );
+//            assert(ret.toString().equals("http://" + info + "@" + this.get().getHost() + ":" + this.get().getPort() + this.get().getPath()));
+            return ret;
         }
 
         @Override
         public RequestURI port(final int num) {
-            return new BaseUri(
+            RequestURI ret = new BaseUri(
                 this.owner,
                 UriBuilder.fromUri(this.address)
                     .port(num).build().toString()
             );
+            assert(ret.toString().equals(this.get().getScheme() + "://" + this.get().getHost() + ":" + num + this.get().getPath()));
+            return ret;
         }
     }
 
@@ -763,7 +791,9 @@ public final class BaseRequest implements Request {
 
         @Override
         public RequestBody set(final String txt) {
-            return this.set(txt.getBytes(BaseRequest.CHARSET));
+            RequestBody ret = this.set(txt.getBytes(BaseRequest.CHARSET));
+            assert(ret.get().equals(txt));
+            return ret;
         }
 
         @Override
@@ -785,7 +815,7 @@ public final class BaseRequest implements Request {
                 if (!builder.toString().isEmpty()) {
                     builder.append('&');
                 }
-                return new BaseRequest.FormEncodedBody(
+                RequestBody ret = new BaseRequest.FormEncodedBody(
                     this.owner,
                     builder
                         .append(name)
@@ -799,6 +829,8 @@ public final class BaseRequest implements Request {
                         .toString()
                         .getBytes(BaseRequest.CHARSET)
                 );
+                assert(ret.get().contains(name));
+                return ret;
             } catch (final UnsupportedEncodingException ex) {
                 throw new IllegalStateException(ex);
             }

@@ -108,6 +108,7 @@ public final class XmlResponse extends AbstractResponse {
      * @return XML body
      */
     public XML xml() {
+        assert(this.body().contains("<")&&this.body().contains(">")); // bad xml check
         return new XMLDocument(this.body()).merge(this.context());
     }
 

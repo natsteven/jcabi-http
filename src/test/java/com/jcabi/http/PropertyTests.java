@@ -40,8 +40,9 @@ import static org.junit.jupiter.api.Assertions.*;
         public void stopContainer() { server.stop(); }
 
         // header is set properly in headers
+        // BaseRequest.header(String, Object)
         @Test
-        public void headersTest() throws Exception {
+        public void test1() throws Exception {
             Response req = new JdkRequest(server.home())
                     .header("CS574", "student")
                     .fetch();
@@ -51,53 +52,56 @@ import static org.junit.jupiter.api.Assertions.*;
         }
 
         // request are immutable -> objects are different
+        // BaseRequest.header(String, Object) returns new object
         @Test
-        public void requestTest() {
+        public void test2() {
             Request r1 = new FakeRequest();
             Request r2 = r1.header("new", "request");
-            assertNotEquals(r1, r2);
+            Request r3 = r1.header("new", "request");
+            assert(r2 != r3);
+            assert(r2.equals(r3));
         }
 
-        // reset clears the header
+        // reset clears the specified header
+        // BaseRequest.reset(String)
         @Test
-        public void resetTest() throws Exception {
-            Request r1 = new ApacheRequest(server.home())
-                    .header("reset", "test");
+        public void test3() throws Exception {
+            Request r1 = new ApacheRequest(server.home()).header("reset", "test");
             r1.fetch();
 
             MkQuery rp1 = server.take();
-
-            Response r2 = r1.reset("reset")
-                    .fetch();
+            Response r2 = r1.reset("reset").fetch();
             MkQuery rp2 = server.take();
             assertEquals("test", rp1.headers().get("Reset").get(0));
             assertNull( rp2.headers().get("Reset"));
         }
 
         // request body is set properly
+        // BaseRequest#FormEncodedBody.set(String)
         @Test
-        public void bodySetGetTest() {
+        public void test4() {
             RequestBody body = new FakeRequest().body().set("test");
             assertEquals("test", body.get());
         }
 
         // fetch fails with param when body is set
-        // otherwise works
+        // BaseRequest.fetch(InputStream)
         @Test
-        public void fetchTest() throws Exception {
-            Request req = new FakeRequest().withBody("test");
+        public void test5() throws Exception {
+            Request req = new JdkRequest(server.home()).body().set("test").back();
 
             assertThrows(IllegalStateException.class, () -> req.fetch(new ByteArrayInputStream("newBody".getBytes())));
 
             req.fetch();
-            MkQuery resp = server.take();
+            MkQuery resp = server.take(); // currently throws nosuchelementexception
             System.out.println(resp.body());
 
         }
 
         // back returns the same request
+        // BaseRequest#BaseUri.back()
         @Test
-        public void backFromBodyTest() {
+        public void test6() {
             Request r1 = new JdkRequest(server.home());
             Request r2 = r1.body().back();
 
@@ -105,8 +109,9 @@ import static org.junit.jupiter.api.Assertions.*;
         }
 
         // queryParam is set properly
+        // BaseRequest#BaseUri.queryParam(String, Object)
         @Test
-        public void queryParamTest() throws Exception {
+        public void test7() throws Exception {
             RequestURI req = new JdkRequest(server.home())
                     .uri().queryParam("param", "value");
 
@@ -114,8 +119,9 @@ import static org.junit.jupiter.api.Assertions.*;
         }
 
         // formParam is set properly
+        // BaseRequest#FormEncodedBody.formParam(String, Object)
         @Test
-        public void formParamTest() throws Exception {
+        public void test8() throws Exception {
             RequestBody req = new JdkRequest(server.home())
                     .body().formParam("param", "value");
 
@@ -123,26 +129,29 @@ import static org.junit.jupiter.api.Assertions.*;
         }
 
         // setUri overwrites the uri
+        // BaseRequest#BaseUri.set(URI)
         @Test
-        public void setUriTest() throws Exception {
+        public void test9() throws Exception {
             RequestURI req = new JdkRequest(server.home())
                     .uri().set(new URI("newUri"));
 
             assertEquals("newUri", req.toString());
         }
 
-        // URI path is set properly
+        // URI path is appended properly to URI
+        // BaseRequest#BaseUri.path(String)
         @Test
-        public void uriPathTest() throws Exception {
+        public void test10() throws Exception {
             RequestURI req = new JdkRequest(server.home())
                     .uri().path("/newPath");
 
-            assertEquals(server.home() + "/newPath", req.toString());
+            assertEquals(server.home() + "newPath", req.toString());
         }
 
         // URI userinfo is set properly
+        // BaseRequest#BaseUri.userInfo(String)
         @Test
-        public void uriUserInfoTest() throws Exception {
+        public void test11() throws Exception {
             String username = "username";
             RequestURI req = new JdkRequest(server.home())
                     .uri().userInfo(username);
@@ -151,20 +160,19 @@ import static org.junit.jupiter.api.Assertions.*;
         }
 
         // URI port is set properly
+        // BaseRequest#BaseUri.port(int)
         @Test
-        public void uriPortTest() throws Exception {
+        public void test12() throws Exception {
             RequestURI req = new JdkRequest(server.home())
                     .uri().port(8080);
 
-            System.out.println(server.home().getPort());
-            System.out.println(server.home().getHost());
-            System.out.println(server.home().getPath());
-            assertEquals("http://" + server.home().getHost() + ":8080/", req.toString());
+            assertEquals(server.home().getScheme() + "://" + server.home().getHost() + ":8080/", req.toString());
         }
 
         // test status code
+        // DefaultResponse.status()
         @Test
-        public void statusTest() throws Exception {
+        public void test13() throws Exception {
             Request req = new JdkRequest(server.home())
                     .method(Request.GET);
 
@@ -177,8 +185,9 @@ import static org.junit.jupiter.api.Assertions.*;
         }
 
         // test reason
+        // DefaultResponse.reason()
         @Test
-        public void reasonTest() throws Exception {
+        public void test14() throws Exception {
             Request req = new JdkRequest(server.home())
                     .method(Request.GET);
 
@@ -191,8 +200,9 @@ import static org.junit.jupiter.api.Assertions.*;
         }
 
         // test body
+        // DefaultResponse.body()
         @Test
-        public void bodyTest() throws Exception {
+        public void test15() throws Exception {
             Request req = new JdkRequest(server.home())
                     .method(Request.GET);
 
@@ -205,8 +215,9 @@ import static org.junit.jupiter.api.Assertions.*;
         }
 
         // retrieves and parses Json
+        // JsonResponse.json()
         @Test
-        public void jsonResponseTest() throws Exception {
+        public void test16() throws Exception {
             MkContainer server2 = new MkGrizzlyContainer()
                     .next(new MkAnswer.Simple(200, "{\"hello\":\"world\"}"))
                     .start();
@@ -221,8 +232,9 @@ import static org.junit.jupiter.api.Assertions.*;
         }
 
         // gets cookies by name and gets paths
+        // RestResponse.cookie(String)
         @Test
-        public void cookiesTest() throws Exception {
+        public void test17() throws Exception {
             RestResponse response = new RestResponse(
                     new FakeRequest().withHeader(HttpHeaders.SET_COOKIE, "cookie1=value1")
                             .withHeader(HttpHeaders.SET_COOKIE, "cookie2=value2; path=value3")
@@ -234,8 +246,9 @@ import static org.junit.jupiter.api.Assertions.*;
         }
 
         // follows redirects to final destination
+        // AutoRedirectingWire.send()
         @Test
-        public void redirectingWireTest() throws Exception {
+        public void test18() throws Exception {
             MkContainer container = new MkGrizzlyContainer()
                     .next(new MkAnswer.Simple(302, "Redirected")
                             .withHeader(HttpHeaders.LOCATION, "/newLocation"))
@@ -252,8 +265,10 @@ import static org.junit.jupiter.api.Assertions.*;
         }
 
         // properly parses XML
+        // XmlResponse.xml()
+        // most of the parsing is actually done by an external library
         @Test
-        public void xmlResponseTest() throws Exception {
+        public void test19() throws Exception {
             MkContainer server2 = new MkGrizzlyContainer()
                     .next(new MkAnswer.Simple(200, "<root><child>value</child></root>"))
                     .start();
@@ -266,8 +281,9 @@ import static org.junit.jupiter.api.Assertions.*;
         }
 
         // parses and follows links in headers
+        // WebLinkingResponse.follow()
         @Test
-        public void webLinkingTest() throws Exception {
+        public void test20() throws Exception {
             MkContainer server2 = new MkGrizzlyContainer()
                     .next(new MkAnswer.Simple(200, "hello")
                             .withHeader("Link", "</newLocation>; rel=\"next\""))
@@ -281,8 +297,9 @@ import static org.junit.jupiter.api.Assertions.*;
         }
 
         // verbose wire logs requests
+        // VerboseWire
         @Test
-        public void verboseWireTest() throws Exception {
+        public void test21() throws Exception {
             MkContainer server2 = new MkGrizzlyContainer()
                     .next(new MkAnswer.Simple(200, "secretMessage"))
                     .start();
@@ -300,9 +317,10 @@ import static org.junit.jupiter.api.Assertions.*;
             server2.stop();
         }
 
-        // userAgentWire adds user agent header
+        // userAgentWire automatically adds user agent header
+        // UserAgentWire.send()
         @Test
-        public void userAgentWireTest() throws Exception {
+        public void test22() throws Exception {
             new JdkRequest(server.home())
                     .through(UserAgentWire.class)
                     .fetch();

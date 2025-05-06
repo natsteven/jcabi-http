@@ -290,6 +290,8 @@ public final class RestResponse extends AbstractResponse {
             );
         }
         assert cookie != null;
+        assert(cookie.getName().equals(name));
+        assert(cookie.getValue() != null);
         return cookie;
     }
 

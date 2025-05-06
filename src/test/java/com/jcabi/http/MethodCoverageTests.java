@@ -47,49 +47,49 @@ class MethodCoverageTests {
         }
     }
 
-    // ApacheRequest constructors, reset, body, multipartBody, fetch, through
-
+    // ApacheRequest fetch(InputStream), and reset()
     @Test
-    void apacheRequestCtorAndReset() throws IOException {
+    void test1() throws IOException {
         ApacheRequest req1 = new ApacheRequest(server.home());
         InputStream in = new ByteArrayInputStream("data".getBytes());
         Response res1 = req1.fetch(in);
-        // reset on a fresh request
+
         Request req2 = req1.reset("Any-Header");
         Response res2 = req2.fetch();
         assertEquals(200, res2.status());
     }
 
+    // ApacheRequest 2 formParams(), 2 get(), 3 set()
     @Test
-    void bodyAndMultipartBodyApis() {
+    void test2() {
         ApacheRequest req = new ApacheRequest(server.home());
-        // Form-encoded body
+
         RequestBody form = req.body();
-        form = form.formParams(Map.of("foo", "bar")); // FormEncodedBody.formParams
+        form = form.formParams(Map.of("foo", "bar"));
         assertTrue(form.get().contains("foo=bar"));
-        // Multipart form body
+
         RequestBody multi = req.multipartBody();
-        multi = multi.set("text");               // set(String)
-        multi = multi.set("bin".getBytes());    // set(byte[])
-        String get = multi.get(); // not used
+        multi = multi.set("text");
+        multi = multi.set("bin".getBytes());
         JsonObject json = Json.createObjectBuilder().add("x", 1).build();
-        multi = multi.set(json);                  // set(JsonStructure)
-        multi = multi.formParams(Map.of("a", "b")); // MultipartFormBody.formParams
-        assertTrue(multi.get().contains("a"));      // get()
+        multi = multi.set(json);
+        multi = multi.formParams(Map.of("a", "b"));
+        assertTrue(multi.get().contains("a"));
     }
 
+    // ApacheReqquest Constructor, 2 through(), fetch()
     @Test
     void fetchInputStreamAndThroughWire() throws Exception {
         URI home = server.home();
         ApacheRequest req = new ApacheRequest(home);
         InputStream in = new ByteArrayInputStream("data".getBytes());
-        // through(Class<T>) overload
+
         Request viaClass = req.through(CachingWire.class);
-        assertEquals(200, viaClass.fetch(in).status()); // fetch(InputStream)
-        // through(Wire) overload
+        assertEquals(200, viaClass.fetch(in).status());
+
         Wire custom = Mockito.mock(Wire.class);
         Request viaObj = req.through(custom);
-        assertEquals(200, viaObj.fetch().status());
+        assertEquals(200, viaClass.fetch().status());
     }
 
     // JsonResponse.VerboseReader.close()

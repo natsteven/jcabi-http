@@ -38,6 +38,7 @@ import com.jcabi.manifests.Manifests;
 import jakarta.ws.rs.core.HttpHeaders;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.AbstractMap;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Map;
@@ -124,6 +125,7 @@ public final class UserAgentWire implements Wire {
                 )
             );
         }
+        assert(hdrs.contains(new AbstractMap.SimpleEntry<>(HttpHeaders.USER_AGENT,this.agent)));
         return this.origin.send(
             req, home, method, hdrs, content, connect, read
         );

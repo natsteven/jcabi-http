@@ -110,11 +110,13 @@ public final class DefaultResponse implements Response {
         return this.req;
     }
 
+    // reliant on server response, so cannot have assertions
     @Override
     public int status() {
         return this.code;
     }
 
+    // also reliant on server response, so no assertions. probably too trivial....
     @Override
     public String reason() {
         return this.phrase;
@@ -145,6 +147,8 @@ public final class DefaultResponse implements Response {
                 )
             );
         }
+//        assert(!body.isEmpty());
+//        assert(body.length() == this.content.length);
         return body;
     }
 

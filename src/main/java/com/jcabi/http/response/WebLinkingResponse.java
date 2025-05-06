@@ -103,6 +103,7 @@ public final class WebLinkingResponse extends AbstractResponse {
                 )
             );
         }
+        assert(link.uri() instanceof URI);
         return new RestResponse(this).jump(link.uri());
     }
 

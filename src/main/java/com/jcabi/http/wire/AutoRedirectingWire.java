@@ -137,6 +137,7 @@ public final class AutoRedirectingWire implements Wire {
             }
             ++attempt;
         }
+        assert(attempt >= this.max || (response.status() < 300));
         return response;
     }
 

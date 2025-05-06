@@ -101,6 +101,8 @@ public final class JsonResponse extends AbstractResponse {
         final byte[] body = this.binary();
         final String json;
         json = new String(body, StandardCharsets.UTF_8);
+        // doesn't allow later handling of bad or not json
+//        assert(json.contains("{") && json.contains("}")); // bad check for jsoniness
         return new JsonResponse.VerboseReader(
             Json.createReader(
                 new StringReader(

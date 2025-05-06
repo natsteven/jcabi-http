@@ -10,7 +10,7 @@ import java.util.AbstractMap;
 import java.net.URL;
 import java.util.Map;
 
-public class CustomRegressionTests {
+public class InfoMethodTests {
 
     // TRIVIAL TESTS: ---------------------------------------
     // This tests the toString, equals, and hashCode methods of all classes.
