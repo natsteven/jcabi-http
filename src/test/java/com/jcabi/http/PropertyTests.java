@@ -68,7 +68,6 @@ import static org.junit.jupiter.api.Assertions.*;
         public void test3() throws Exception {
             Request r1 = new ApacheRequest(server.home()).header("reset", "test");
             r1.fetch();
-
             MkQuery rp1 = server.take();
             Response r2 = r1.reset("reset").fetch();
             MkQuery rp2 = server.take();

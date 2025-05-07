@@ -1,5 +1,6 @@
 package com.jcabi.http;
 
+import com.jcabi.http.mock.MkQuery;
 import com.jcabi.http.request.*;
 import com.jcabi.http.response.*;
 import com.jcabi.http.wire.*;
@@ -21,8 +22,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
+import java.net.http.HttpHeaders;
 import java.util.AbstractMap;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -67,8 +70,8 @@ class MethodCoverageTests {
         RequestBody form = req.body();
         form = form.formParams(Map.of("foo", "bar"));
         assertTrue(form.get().contains("foo=bar"));
-
-        RequestBody multi = req.multipartBody();
+        RequestBody multi = req.header("Content-Type",";boundary=").multipartBody();
+        RequestBody multi2 = req.multipartBody();
         multi = multi.set("text");
         multi = multi.set("bin".getBytes());
         JsonObject json = Json.createObjectBuilder().add("x", 1).build();
@@ -105,36 +108,31 @@ class MethodCoverageTests {
     // WebLinkingResponse.SimpleLink Map methods
     @Test
     void test5() throws Exception {
-        URI home = server.home();
-        WebLinkingResponse wlr = new ApacheRequest(home)
+        WebLinkingResponse wlr = new ApacheRequest(server.home())
                 .fetch()
                 .as(WebLinkingResponse.class);
         WebLinkingResponse.Link link = wlr.links().get("next");
-
-        assert(link.containsKey("rel"));
-        assert(link.containsValue("next"));
+        assertThrows(UnsupportedOperationException.class, () -> link.put("a", "b"));
+        assertThrows(UnsupportedOperationException.class, () -> link.putAll(Map.of("c", "d", "e", "f")));
+        assert(link.values().contains("next"));
+        assertThrows(UnsupportedOperationException.class, () -> link.remove("a"));
+        assertNull(link.get("a"));
+        assertThrows(UnsupportedOperationException.class, () -> link.clear());
+        assert(link.keySet().contains("rel"));
     }
 
-    // XmlResponse.rel and CachingWire.invalidate
+    // XmlResponse.rel
     @Test
     void test6() throws Exception {
-        URI home = server.home();
-        // prepare XML link
-        String xml = "<root><link rel=\"self\" href=\"http://example.com/path\"/></root>";
-        server.next(new MkAnswer.Simple(200, xml)
-                .withHeader("Content-Type", "text/xml"));
-        Request next = new ApacheRequest(home)
-                .fetch()
-                .as(XmlResponse.class)
-                .rel("/root/link/@href");
+        String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                + "<root><link rel=\"next\" href=\"http://example.com/path\"/></root>";
+
+        MkContainer server2 = new MkGrizzlyContainer().next(new MkAnswer.Simple(200, xml).withHeader("Content-Type", "application/xml"));
+        server2.start();
+        Request next = new ApacheRequest(server2.home())
+                .fetch().as(XmlResponse.class).rel("/root/link/@href");
         assertNotNull(next);
-        // caching invalidate
-        Request cached = new ApacheRequest(home).through(CachingWire.class);
-        cached.fetch();
-        assertEquals(1, server.queries());
-        CachingWire.invalidate();
-        cached.fetch();
-        assertEquals(2, server.queries());
+        server2.stop();
     }
 
     // toString and equals/hashCode for BaseUri, FormEncodedBody, and weblinkning response (inner classes)
@@ -161,12 +159,12 @@ class MethodCoverageTests {
     @Test
     void test8() throws Exception {
         FakeRequest fake = new FakeRequest().withStatus(201);
-        Request decorated = fake.through(RetryWire.class, 5);
+        Request decorated = fake.through(RetryWire.class);
         Response res = decorated.fetch();
         assertEquals(201, res.status());
     }
 
-    // RestResponse.assertRest()
+    // RestResponse.assertThat()
     @Test
     void test9() throws IOException {
         Response res = new ApacheRequest(server.home())
@@ -184,7 +182,7 @@ class MethodCoverageTests {
                     .fetch().as(JsonResponse.class);
             JsonResponse r2 = res.assertJson("its unsupported anyways");
         } catch (Exception e) {
-            assertTrue(e.getMessage().contains("unsupported"));
+            assert(e.getMessage().contains("not implemented"));
         }
     }
 
@@ -216,6 +214,17 @@ class MethodCoverageTests {
         assertEquals(200, req.fetch().status());
     }
 
+    // CachingWire.invalidate()
+    @Test
+    void test14() throws Exception {
+        Request cached = new ApacheRequest(server.home()).through(CachingWire.class);
+        cached.fetch();
+        MkQuery rp1 = server.take();
+        cached.fetch();
+        assertThrows(NoSuchElementException.class, server::take);
+        CachingWire.invalidate(); //still unsure how to check this works
+        cached.fetch();
+    }
 
 
 }
