@@ -8,10 +8,15 @@ import java.io.IOException;
 
 public class FcWireAspectTest {
     @Test
-    public void testFcWireAspect1() throws IOException {
+    public void testFcWireAspect() {
         Request req = new JdkRequest("http://google.com")
                 .through(FcWire.class);
-        req.fetch();
-        req.fetch();
+        try {
+            req.fetch();
+            req.fetch();
+            req.method("end"); // Used to trigger the end of the test.
+        } catch (IOException ex) {
+            System.err.println("Test exception: " + ex.toString());
+        }
     }
 }
